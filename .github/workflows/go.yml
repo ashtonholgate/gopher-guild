@@ -21,6 +21,10 @@ jobs:
         run: go build -v ./gopherService
 
       - name: Test
+        run: go test -v ./gopherService/...
+
+      - name: Display Go version and module info
         run: |
+          go version
           cd gopherService
-          go test -v ./...
+          go list -m all
