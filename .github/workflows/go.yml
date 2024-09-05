@@ -1,4 +1,4 @@
-name: Go
+name: Go CI
 
 on:
   push:
@@ -7,7 +7,8 @@ on:
     branches: ["master"]
 
 jobs:
-  build:
+  test:
+    name: Build and Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,13 +17,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: "1.22.5"
-
-      - name: Verify directory structure
-        run: |
-          pwd
-          ls -R
-          echo "Contents of gopherService directory:"
-          ls -la gopherService
 
       - name: Build
         run: |
@@ -34,8 +28,11 @@ jobs:
           cd gopherService
           go test -v ./...
 
-      - name: Display Go version and module info
+      - name: Check formatting
         run: |
-          go version
           cd gopherService
-          go list -m all
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "The following files are not formatted correctly:"
+            gofmt -s -l .
+            exit 1
+          fi
