@@ -17,11 +17,22 @@ jobs:
         with:
           go-version: "1.22.5"
 
+      - name: Verify directory structure
+        run: |
+          pwd
+          ls -R
+          echo "Contents of gopherService directory:"
+          ls -la gopherService
+
       - name: Build
-        run: go build -v ./gopherService
+        run: |
+          cd gopherService
+          go build -v .
 
       - name: Test
-        run: go test -v ./gopherService/...
+        run: |
+          cd gopherService
+          go test -v ./...
 
       - name: Display Go version and module info
         run: |
