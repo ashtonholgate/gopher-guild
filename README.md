@@ -34,7 +34,11 @@ If it is your first time running `docker compose up`, or if you have previously 
 
 You can find an OpenAPI specification for the gopher service in `./gopherService/apiSpecification.yaml`
 
-## Testing
+## API Testing
+
+I have written Bruno scripts for the endpoints that exist for easy testing. You can find them in `./bruno`
+
+## Automated Testing
 
 When scoped to the gopherService, you can run tests for all packages by running `go test ./...` in the terminal.
 

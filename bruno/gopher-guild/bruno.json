@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "gopher-guild",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
