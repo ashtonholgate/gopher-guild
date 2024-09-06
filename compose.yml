@@ -1,0 +1,35 @@
+services:
+  gopher-service:
+    build:
+      context: ./gopherService
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./gopherService:/app
+    environment:
+      - WATCHPACK_POLLING=true
+    depends_on:
+      gopher-guild-db:
+        condition: service_healthy
+    env_file: ./gopherService/.env
+
+  gopher-guild-db:
+    container_name: gopher-guild-db
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d db"]
+      interval: 2s
+      timeout: 2s
+      retries: 5
+
+volumes:
+  postgres_data:

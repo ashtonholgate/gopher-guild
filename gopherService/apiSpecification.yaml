@@ -1,0 +1,108 @@
+openapi: 3.0.0
+info:
+  title: Gopher Service API
+  description: API for managing gopher entities
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /gophers:
+    post:
+      summary: Create a new gopher
+      description: Creates a new gopher entity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GopherInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Gopher"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /gophers/{id}:
+    get:
+      summary: Get a gopher by ID
+      description: Retrieves a gopher entity by its ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the gopher to retrieve
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Gopher"
+        "404":
+          description: Gopher not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    GopherInput:
+      type: object
+      required:
+        - name
+        - age
+        - color
+      properties:
+        name:
+          type: string
+          description: The name of the gopher
+        age:
+          type: integer
+          minimum: 0
+          description: The age of the gopher
+        color:
+          type: string
+          description: The color of the gopher
+    Gopher:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The unique identifier of the gopher
+        name:
+          type: string
+          description: The name of the gopher
+        age:
+          type: integer
+          minimum: 0
+          description: The age of the gopher
+        color:
+          type: string
+          description: The color of the gopher
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message

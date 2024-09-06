@@ -1,0 +1,38 @@
+name: Go CI
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.22.5"
+
+      - name: Build
+        run: |
+          cd gopherService
+          go build -v .
+
+      - name: Test
+        run: |
+          cd gopherService
+          go test -v ./...
+
+      - name: Check formatting
+        run: |
+          cd gopherService
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "The following files are not formatted correctly:"
+            gofmt -s -l .
+            exit 1
+          fi
