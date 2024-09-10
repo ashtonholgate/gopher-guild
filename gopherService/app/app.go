@@ -20,13 +20,19 @@ func New(config config.Config) (*App, error) {
 		return nil, err
 	}
 
+	router := gin.Default()
+
+	router.Use(errorHandler())
+
 	app := &App{
-		Router:       gin.Default(),
+		Router:       router,
 		Dependencies: dependencies,
 		Config:       config,
 	}
 
 	app.setupRoutes(dependencies)
+
+	app.Router.Use(errorHandler())
 	return app, nil
 }
 

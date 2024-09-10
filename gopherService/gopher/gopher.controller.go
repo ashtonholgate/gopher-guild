@@ -1,9 +1,6 @@
 package gopher
 
 import (
-	"errors"
-	"gopherService/customErrors"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -32,28 +29,7 @@ func (cs *controllerImpl) CreateGopherEndpoint() gin.HandlerFunc {
 
 		createdGopher, err := cs.CommandService.Create(newGopher)
 		if err != nil {
-			log.Printf("error: %+v", err)
-
-			var gopherColorInvalidErr *customErrors.GopherColorInvalidError
-			var databaseErr *customErrors.DatabaseError
-
-			switch {
-			case errors.As(err, &gopherColorInvalidErr):
-				c.JSON(http.StatusBadRequest, gin.H{
-					"error":   "Invalid gopher color",
-					"details": gopherColorInvalidErr.Error(),
-				})
-			case errors.As(err, &databaseErr):
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error":   "Database operation failed",
-					"details": "An error occurred while processing your request. Please try again later.",
-				})
-			default:
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error":   "An unexpected error occurred",
-					"details": "Please try again later or contact support if the problem persists.",
-				})
-			}
+			c.Error(err)
 			return
 		}
 
