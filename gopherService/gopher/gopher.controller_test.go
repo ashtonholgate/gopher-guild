@@ -10,8 +10,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -26,19 +24,7 @@ func (m *MockCommandService) Create(gopher IncomingGopher) (OutgoingGopher, erro
 	return args.Get(0).(OutgoingGopher), args.Error(1)
 }
 
-func setupTestEnvironment() {
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("validateNameLength", func(fl validator.FieldLevel) bool {
-			return validateNameLength(fl, 50)
-		})
-		v.RegisterValidation("validateColorLength", func(fl validator.FieldLevel) bool {
-			return validateColorLength(fl, 50)
-		})
-	}
-}
-
 func TestCreateGopherEndpoint(t *testing.T) {
-	setupTestEnvironment()
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
@@ -60,18 +46,6 @@ func TestCreateGopherEndpoint(t *testing.T) {
 			mockError:      nil,
 			expectedStatus: http.StatusCreated,
 			expectedBody:   OutgoingGopher{BaseGopher: BaseGopher{Name: "TestGopher", Age: utilities.ToPointer(5), Color: "Blue"}, Id: 1},
-		},
-		{
-			name: "Invalid Gopher Color",
-			inputGopher: IncomingGopher{BaseGopher: BaseGopher{
-				Name:  "TestGopher",
-				Age:   utilities.ToPointer(5),
-				Color: "Red",
-			}},
-			mockReturn:     OutgoingGopher{},
-			mockError:      &customErrors.GopherColorInvalidError{Color: "Red"},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   gin.H{"error": "Invalid gopher color", "details": "Gopher color is invalid. Gophers can not be Red"},
 		},
 		{
 			name: "Database Error",
@@ -143,7 +117,6 @@ func TestCreateGopherEndpoint(t *testing.T) {
 }
 
 func TestInvalidJSONInput(t *testing.T) {
-	setupTestEnvironment()
 	gin.SetMode(gin.TestMode)
 
 	mockService := new(MockCommandService)

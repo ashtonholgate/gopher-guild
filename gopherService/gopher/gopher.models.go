@@ -1,16 +1,14 @@
 package gopher
 
 import (
-	"gopherService/config"
-
-	"github.com/gin-gonic/gin/binding"
-	"github.com/go-playground/validator/v10"
+	"gopherService/customErrors"
+	"strings"
 )
 
 type BaseGopher struct {
-	Name  string `json:"name" binding:"required,validateNameLength"`
-	Age   *int   `json:"age" binding:"required,min=0"`
-	Color string `json:"color" binding:"required,validateColorLength"`
+	Name  string `json:"name"`
+	Age   *int   `json:"age"`
+	Color string `json:"color"`
 }
 
 type IncomingGopher struct {
@@ -22,24 +20,27 @@ type OutgoingGopher struct {
 	Id int `json:"id"`
 }
 
-func validateNameLength(fl validator.FieldLevel, max int) bool {
-	name := fl.Field().String()
-	return len(name) <= max
-}
+func (g *IncomingGopher) Validate() error {
+	issues := []string{}
 
-func validateColorLength(fl validator.FieldLevel, max int) bool {
-	color := fl.Field().String()
-	return len(color) <= max
-}
-
-// InitialiseValidator initialises the custom validators necessary for parsing gophers
-func InitialiseValidator(configuration config.Config) {
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("validateNameLength", func(fl validator.FieldLevel) bool {
-			return validateNameLength(fl, configuration.MAXIMUM_GOPHER_NAME_LENGTH)
-		})
-		v.RegisterValidation("validateColorLength", func(fl validator.FieldLevel) bool {
-			return validateColorLength(fl, configuration.MAXIMUM_GOPHER_COLOR_LENGTH)
-		})
+	if g.Name == "" {
+		issues = append(issues, "name is required")
 	}
+	if g.Age == nil {
+		issues = append(issues, "age is required")
+	} else if g.Age != nil {
+		if *g.Age < 0 {
+			issues = append(issues, "age must be non-negative")
+		}
+	}
+	if g.Color == "" {
+		issues = append(issues, "color is required")
+	}
+	if strings.ToLower(g.Color) == "red" {
+		issues = append(issues, "color can not be red")
+	}
+	if len(issues) > 0 {
+		return &customErrors.ValidationError{Issues: strings.Join(issues, ", ")}
+	}
+	return nil
 }
