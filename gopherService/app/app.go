@@ -22,8 +22,6 @@ func New(config config.Config) (*App, error) {
 
 	router := gin.Default()
 
-	router.Use(errorHandler())
-
 	app := &App{
 		Router:       router,
 		Dependencies: dependencies,
@@ -32,7 +30,7 @@ func New(config config.Config) (*App, error) {
 
 	app.setupRoutes(dependencies)
 
-	app.Router.Use(errorHandler())
+	app.Router.Use(ErrorMiddleware())
 	return app, nil
 }
 

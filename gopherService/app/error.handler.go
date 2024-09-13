@@ -9,12 +9,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func errorHandler() gin.HandlerFunc {
+func ErrorMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 
 		if len(c.Errors) > 0 {
 			err := c.Errors.Last().Err
+
 			log.Printf("error: %+v", err)
 
 			var gopherColorInvalidErr *customErrors.GopherColorInvalidError
@@ -37,6 +38,9 @@ func errorHandler() gin.HandlerFunc {
 					"details": "Please try again later or contact support if the problem persists.",
 				})
 			}
+
+			// Abort the request to prevent further processing
+			c.Abort()
 		}
 	}
 }

@@ -23,7 +23,7 @@ func (cs *controllerImpl) CreateGopherEndpoint() gin.HandlerFunc {
 		var newGopher IncomingGopher
 
 		if err := c.ShouldBindJSON(&newGopher); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.Error(err)
 			return
 		}
 

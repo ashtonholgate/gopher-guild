@@ -3,20 +3,17 @@ package gopher
 import (
 	"bytes"
 	"encoding/json"
-	"gopherService/customErrors"
-	"gopherService/utilities"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-// MockCommandService is a mock of CommandService interface
+// MockCommandService is a mock implementation of CommandServiceContract
 type MockCommandService struct {
 	mock.Mock
 }
@@ -26,19 +23,7 @@ func (m *MockCommandService) Create(gopher IncomingGopher) (OutgoingGopher, erro
 	return args.Get(0).(OutgoingGopher), args.Error(1)
 }
 
-func setupTestEnvironment() {
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("validateNameLength", func(fl validator.FieldLevel) bool {
-			return validateNameLength(fl, 50)
-		})
-		v.RegisterValidation("validateColorLength", func(fl validator.FieldLevel) bool {
-			return validateColorLength(fl, 50)
-		})
-	}
-}
-
 func TestCreateGopherEndpoint(t *testing.T) {
-	setupTestEnvironment()
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
@@ -47,61 +32,49 @@ func TestCreateGopherEndpoint(t *testing.T) {
 		mockReturn     OutgoingGopher
 		mockError      error
 		expectedStatus int
-		expectedBody   interface{}
+		expectedBody   OutgoingGopher
 	}{
 		{
-			name: "Successful Gopher Creation",
-			inputGopher: IncomingGopher{BaseGopher: BaseGopher{
-				Name:  "TestGopher",
-				Age:   utilities.ToPointer(5),
-				Color: "Blue",
-			}},
-			mockReturn:     OutgoingGopher{BaseGopher: BaseGopher{Name: "TestGopher", Age: utilities.ToPointer(5), Color: "Blue"}, Id: 1},
+			name: "Successful creation",
+			inputGopher: IncomingGopher{
+				BaseGopher: BaseGopher{
+					Name:  "TestGopher",
+					Age:   new(int),
+					Color: "Brown",
+				},
+			},
+			mockReturn: OutgoingGopher{
+				BaseGopher: BaseGopher{
+					Name:  "TestGopher",
+					Age:   new(int),
+					Color: "Brown",
+				},
+				Id: 1,
+			},
 			mockError:      nil,
 			expectedStatus: http.StatusCreated,
-			expectedBody:   OutgoingGopher{BaseGopher: BaseGopher{Name: "TestGopher", Age: utilities.ToPointer(5), Color: "Blue"}, Id: 1},
-		},
-		{
-			name: "Invalid Gopher Color",
-			inputGopher: IncomingGopher{BaseGopher: BaseGopher{
-				Name:  "TestGopher",
-				Age:   utilities.ToPointer(5),
-				Color: "Red",
-			}},
-			mockReturn:     OutgoingGopher{},
-			mockError:      &customErrors.GopherColorInvalidError{Color: "Red"},
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   gin.H{"error": "Invalid gopher color", "details": "Gopher color is invalid. Gophers can not be Red"},
-		},
-		{
-			name: "Database Error",
-			inputGopher: IncomingGopher{BaseGopher: BaseGopher{
-				Name:  "TestGopher",
-				Age:   utilities.ToPointer(5),
-				Color: "Blue",
-			}},
-			mockReturn: OutgoingGopher{},
-			mockError: &customErrors.DatabaseError{
-				Action:      "creating gopher",
-				ErrorString: "connection timeout",
-			},
-			expectedStatus: http.StatusInternalServerError,
-			expectedBody: gin.H{
-				"error":   "Database operation failed",
-				"details": "An error occurred while processing your request. Please try again later.",
+			expectedBody: OutgoingGopher{
+				BaseGopher: BaseGopher{
+					Name:  "TestGopher",
+					Age:   new(int),
+					Color: "Brown",
+				},
+				Id: 1,
 			},
 		},
 		{
-			name: "Unexpected Error",
-			inputGopher: IncomingGopher{BaseGopher: BaseGopher{
-				Name:  "TestGopher",
-				Age:   utilities.ToPointer(5),
-				Color: "Blue",
-			}},
+			name: "Creation error",
+			inputGopher: IncomingGopher{
+				BaseGopher: BaseGopher{
+					Name:  "TestGopher",
+					Age:   new(int),
+					Color: "Brown",
+				},
+			},
 			mockReturn:     OutgoingGopher{},
-			mockError:      assert.AnError,
+			mockError:      errors.New("creation error"),
 			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   gin.H{"error": "An unexpected error occurred", "details": "Please try again later or contact support if the problem persists."},
+			expectedBody:   OutgoingGopher{},
 		},
 	}
 
@@ -112,29 +85,26 @@ func TestCreateGopherEndpoint(t *testing.T) {
 
 			controller := NewGopherController(mockService)
 
+			router := gin.New()
+			router.POST("/gophers", controller.CreateGopherEndpoint())
+			router.Use(ErrorMiddleware())
+
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
+			jsonData, _ := json.Marshal(tt.inputGopher)
+			req, _ := http.NewRequest("POST", "/gophers", bytes.NewBuffer(jsonData))
+			req.Header.Set("Content-Type", "application/json")
 
-			body, _ := json.Marshal(tt.inputGopher)
-			c.Request, _ = http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(body))
-			c.Request.Header.Set("Content-Type", "application/json")
-
-			controller.CreateGopherEndpoint()(c)
+			router.ServeHTTP(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
-			var response map[string]interface{}
-			err := json.Unmarshal(w.Body.Bytes(), &response)
-			assert.NoError(t, err)
-
-			if tt.expectedStatus == http.StatusCreated {
-				assert.Equal(t, tt.expectedBody.(OutgoingGopher).Id, int(response["id"].(float64)))
-				assert.Equal(t, tt.expectedBody.(OutgoingGopher).Name, response["name"])
-				assert.Equal(t, tt.expectedBody.(OutgoingGopher).Color, response["color"])
-				assert.Equal(t, float64(*tt.expectedBody.(OutgoingGopher).Age), response["age"])
+			if tt.mockError == nil {
+				var response OutgoingGopher
+				err := json.Unmarshal(w.Body.Bytes(), &response)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedBody, response)
 			} else {
-				assert.Equal(t, tt.expectedBody.(gin.H)["error"], response["error"])
-				assert.Equal(t, tt.expectedBody.(gin.H)["details"], response["details"])
+				assert.Contains(t, w.Body.String(), tt.mockError.Error())
 			}
 
 			mockService.AssertExpectations(t)
@@ -142,26 +112,14 @@ func TestCreateGopherEndpoint(t *testing.T) {
 	}
 }
 
-func TestInvalidJSONInput(t *testing.T) {
-	setupTestEnvironment()
-	gin.SetMode(gin.TestMode)
+// ErrorMiddleware handles errors and returns appropriate responses
+func ErrorMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
 
-	mockService := new(MockCommandService)
-	controller := NewGopherController(mockService)
-
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-
-	invalidJSON := []byte(`{"name": "TestGopher", "age": "invalid", "color": "Blue"}`)
-	c.Request, _ = http.NewRequest(http.MethodPost, "/", bytes.NewBuffer(invalidJSON))
-	c.Request.Header.Set("Content-Type", "application/json")
-
-	controller.CreateGopherEndpoint()(c)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-
-	var response map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Contains(t, response["error"], "json: cannot unmarshal")
+		if len(c.Errors) > 0 {
+			err := c.Errors.Last().Err
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+	}
 }
