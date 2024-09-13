@@ -2,6 +2,7 @@ package gopher
 
 import (
 	"errors"
+	"fmt"
 	"gopherService/customErrors"
 	"log"
 	"net/http"
@@ -30,19 +31,20 @@ func (cs *controllerImpl) CreateGopherEndpoint() gin.HandlerFunc {
 			return
 		}
 
+		fmt.Println(newGopher.Validate())
+
+		if err := newGopher.Validate(); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
 		createdGopher, err := cs.CommandService.Create(newGopher)
 		if err != nil {
 			log.Printf("error: %+v", err)
 
-			var gopherColorInvalidErr *customErrors.GopherColorInvalidError
 			var databaseErr *customErrors.DatabaseError
 
 			switch {
-			case errors.As(err, &gopherColorInvalidErr):
-				c.JSON(http.StatusBadRequest, gin.H{
-					"error":   "Invalid gopher color",
-					"details": gopherColorInvalidErr.Error(),
-				})
 			case errors.As(err, &databaseErr):
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error":   "Database operation failed",

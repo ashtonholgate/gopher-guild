@@ -39,7 +39,6 @@ func initialiseDB(configuration config.Config) (*sql.DB, error) {
 
 func initialiseDependencies(configuration config.Config) (AppDependencies, error) {
 	db, err := initialiseDB(configuration)
-	gopher.InitialiseValidator(configuration)
 	if err != nil {
 		return AppDependencies{}, &DatabaseInitializationError{}
 	}

@@ -29,10 +29,10 @@ func (e *DatabaseError) Error() string {
 	return fmt.Sprintf("Error returned from database when %v: %v", e.Action, e.ErrorString)
 }
 
-type GopherColorInvalidError struct {
-	Color string
+type ValidationError struct {
+	Issues string
 }
 
-func (e *GopherColorInvalidError) Error() string {
-	return fmt.Sprintf("Gopher color is invalid. Gophers can not be %v", e.Color)
+func (e *ValidationError) Error() string {
+	return fmt.Sprint(e.Issues)
 }
