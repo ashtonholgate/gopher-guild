@@ -7,8 +7,6 @@ services:
       - "8080:8080"
     volumes:
       - ./gopherService:/app
-    environment:
-      - WATCHPACK_POLLING=true
     depends_on:
       gopher-guild-db:
         condition: service_healthy
