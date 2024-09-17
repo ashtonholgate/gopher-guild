@@ -29,10 +29,18 @@ func (e *DatabaseError) Error() string {
 	return fmt.Sprintf("Error returned from database when %v: %v", e.Action, e.ErrorString)
 }
 
+type JSONDecodingError struct {
+	Err error
+}
+
+func (e *JSONDecodingError) Error() string {
+	return e.Err.Error()
+}
+
 type ValidationError struct {
 	Issues string
 }
 
 func (e *ValidationError) Error() string {
-	return fmt.Sprint(e.Issues)
+	return e.Issues
 }

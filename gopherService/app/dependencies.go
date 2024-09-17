@@ -11,7 +11,7 @@ type AppDependencies struct {
 	DB                      *sql.DB
 	GopherRepositoryService gopher.RepositoryService
 	GopherCommandService    gopher.CommandService
-	GopherRouterService     gopher.Controller
+	GopherController        gopher.Controller
 }
 
 type DatabaseInitializationError struct{}
@@ -49,6 +49,6 @@ func initialiseDependencies(configuration config.Config) (AppDependencies, error
 		DB:                      db,
 		GopherRepositoryService: gopherRepositoryService,
 		GopherCommandService:    gopherCommandService,
-		GopherRouterService:     gopherRouterService,
+		GopherController:        gopherRouterService,
 	}, nil
 }

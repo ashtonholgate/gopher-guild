@@ -2,14 +2,15 @@ package app
 
 import (
 	"gopherService/config"
+	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 
 	_ "github.com/lib/pq"
 )
 
 type App struct {
-	Router       *gin.Engine
+	Router       *mux.Router
 	Dependencies AppDependencies
 	Config       config.Config
 }
@@ -20,26 +21,24 @@ func New(config config.Config) (*App, error) {
 		return nil, err
 	}
 
-	app := &App{
-		Router:       gin.Default(),
+	app := App{
+		Router:       mux.NewRouter(),
 		Dependencies: dependencies,
 		Config:       config,
 	}
 
-	app.setupRoutes(dependencies)
-	return app, nil
+	setupRoutes(app.Router, dependencies)
+
+	return &app, nil
 }
 
-func (a *App) setupRoutes(dependencies AppDependencies) {
-	a.Router.GET("/health", healthHandler)
-
-	a.Router.POST("/gophers", dependencies.GopherRouterService.CreateGopherEndpoint())
+func setupRoutes(r *mux.Router, dependencies AppDependencies) {
+	r.HandleFunc("/health", healthHandler).Methods("GET")
+	r.HandleFunc("/gophers", dependencies.GopherController.CreateGopherEndpoint).Methods("POST")
 }
 
-func (a *App) Run(addr string) error {
-	return a.Router.Run(addr)
-}
-
-func healthHandler(c *gin.Context) {
-	c.String(200, "healthy")
+func healthHandler(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message": "Healthy"}`))
 }
