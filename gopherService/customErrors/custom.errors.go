@@ -20,6 +20,12 @@ func (e *EnvVarWrongTypeError) Error() string {
 	return fmt.Sprintf("Environment variable %v provided as %v, but should be %v", e.EnvVar, e.Value, e.Type)
 }
 
+type NoRowsError struct{}
+
+func (e *NoRowsError) Error() string {
+	return "Not found"
+}
+
 type DatabaseError struct {
 	Action      string
 	ErrorString string

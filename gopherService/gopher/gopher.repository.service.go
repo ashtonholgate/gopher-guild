@@ -62,7 +62,12 @@ func (rs *repositoryServiceImpl) Read(id int) (OutgoingGopher, error) {
 	).Scan(&fetchedGopher.Id, &fetchedGopher.Name, &fetchedGopher.Age, &fetchedGopher.Color)
 
 	if err != nil {
-		return OutgoingGopher{}, &customErrors.DatabaseError{Action: "reading from gophers table", ErrorString: err.Error()}
+		switch err {
+		case sql.ErrNoRows:
+			return OutgoingGopher{}, &customErrors.NoRowsError{}
+		default:
+			return OutgoingGopher{}, err
+		}
 	}
 
 	return fetchedGopher, nil
