@@ -20,6 +20,12 @@ func (e *EnvVarWrongTypeError) Error() string {
 	return fmt.Sprintf("Environment variable %v provided as %v, but should be %v", e.EnvVar, e.Value, e.Type)
 }
 
+type NoRowsError struct{}
+
+func (e *NoRowsError) Error() string {
+	return "Not found"
+}
+
 type DatabaseError struct {
 	Action      string
 	ErrorString string
@@ -27,6 +33,14 @@ type DatabaseError struct {
 
 func (e *DatabaseError) Error() string {
 	return fmt.Sprintf("Error returned from database when %v: %v", e.Action, e.ErrorString)
+}
+
+type URLParsingError struct {
+	PathParam string
+}
+
+func (e *URLParsingError) Error() string {
+	return fmt.Sprintf("Could not find %v in path", e.PathParam)
 }
 
 type JSONDecodingError struct {

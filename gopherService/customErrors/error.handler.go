@@ -11,6 +11,7 @@ func Handle(w http.ResponseWriter, err error) {
 
 	var JSONDecodingError *JSONDecodingError
 	var validationError *ValidationError
+	var noRowsError *NoRowsError
 	var databaseErr *DatabaseError
 
 	var statusCode int
@@ -23,6 +24,8 @@ func Handle(w http.ResponseWriter, err error) {
 	case errors.As(err, &validationError):
 		statusCode = http.StatusBadRequest
 		message = validationError.Error()
+	case errors.As(err, &noRowsError):
+		statusCode = http.StatusNotFound
 	case errors.As(err, &databaseErr):
 		statusCode = http.StatusInternalServerError
 		message = "Database operation failed."

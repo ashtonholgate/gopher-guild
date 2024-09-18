@@ -35,6 +35,7 @@ func New(config config.Config) (*App, error) {
 func setupRoutes(r *mux.Router, dependencies AppDependencies) {
 	r.HandleFunc("/health", healthHandler).Methods("GET")
 	r.HandleFunc("/gophers", dependencies.GopherController.CreateGopherEndpoint).Methods("POST")
+	r.HandleFunc("/gophers/{id}", dependencies.GopherController.ReadGopherEndpoint).Methods("GET")
 }
 
 func healthHandler(w http.ResponseWriter, _ *http.Request) {

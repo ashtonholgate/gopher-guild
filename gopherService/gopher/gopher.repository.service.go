@@ -8,6 +8,7 @@ import (
 
 type RepositoryService interface {
 	Create(IncomingGopher) (OutgoingGopher, error)
+	Read(int) (OutgoingGopher, error)
 }
 
 type repositoryServiceImpl struct {
@@ -49,6 +50,27 @@ func (rs *repositoryServiceImpl) Create(gopher IncomingGopher) (OutgoingGopher, 
 	}
 
 	return outgoingGopher, nil
+}
+
+func (rs *repositoryServiceImpl) Read(id int) (OutgoingGopher, error) {
+
+	var fetchedGopher OutgoingGopher
+
+	err := rs.db.QueryRow(
+		"SELECT id, name, age, color FROM gophers WHERE id = $1",
+		id,
+	).Scan(&fetchedGopher.Id, &fetchedGopher.Name, &fetchedGopher.Age, &fetchedGopher.Color)
+
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			return OutgoingGopher{}, &customErrors.NoRowsError{}
+		default:
+			return OutgoingGopher{}, err
+		}
+	}
+
+	return fetchedGopher, nil
 }
 
 func NewGopherRepositoryService(db *sql.DB) RepositoryService {
