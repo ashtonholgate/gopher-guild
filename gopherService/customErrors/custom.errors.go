@@ -29,6 +29,14 @@ func (e *DatabaseError) Error() string {
 	return fmt.Sprintf("Error returned from database when %v: %v", e.Action, e.ErrorString)
 }
 
+type URLParsingError struct {
+	PathParam string
+}
+
+func (e *URLParsingError) Error() string {
+	return fmt.Sprintf("Could not find %v in path", e.PathParam)
+}
+
 type JSONDecodingError struct {
 	Err error
 }

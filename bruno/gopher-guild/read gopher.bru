@@ -1,0 +1,19 @@
+meta {
+  name: read gopher
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/gophers
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Gophie",
+    "age": 1,
+    "color": "red"
+  }
+}
